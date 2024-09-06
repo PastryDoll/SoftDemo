@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deforming Bouncing Sphere</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/gh/kripken/ammo.js@HEAD/builds/ammo.wasm.js"></script>
+</head>
+<body>
+    <div id="container"></div>
+    <div id="info"><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> webgl - interactive - raycasting - points </div>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.168.0/build/three.module.js",
+            "three/examples/jsm/":"https://unpkg.com/three@0.168.0/examples/jsm/"
+          }
+        }
+    </script>
+    <script src="./scene.js" type="module">
+  </script>
+</body>
+</html>
