@@ -55,8 +55,8 @@ function init_renderer(){
 function init_scene(){
 
     // Light
-    const light = new THREE.DirectionalLight(0xffffff, 10);
-    light.position.set(0, 20, 20);
+    const light = new THREE.DirectionalLight(0xffffff, 2);
+    light.position.set(0, 20, -20);
     light.target.position.set(0, 0, 0);
     light.castShadow = true;
     light.shadow.mapSize.width = 2048;
@@ -69,6 +69,24 @@ function init_scene(){
     light.shadow.camera.far = 500;
     scene.add(light);
 
+    RectAreaLightUniformsLib.init();
+
+    const rectLight1 = new THREE.RectAreaLight( 0xff0000, 50, 4, 10 );
+    rectLight1.position.set( - 5, 4, 10 );
+    scene.add( rectLight1 );
+
+    const rectLight2 = new THREE.RectAreaLight( 0x00ff00, 50, 4, 10 );
+    rectLight2.position.set( 0, 4, 10 );
+    scene.add( rectLight2 );
+
+    const rectLight3 = new THREE.RectAreaLight( 0x0000ff, 50, 4, 10 );
+    rectLight3.position.set( 5, 4, 10 );
+    scene.add( rectLight3 );
+
+    scene.add( new RectAreaLightHelper( rectLight1 ) );
+    scene.add( new RectAreaLightHelper( rectLight2 ) );
+    scene.add( new RectAreaLightHelper( rectLight3 ) );
+
     const s_radius = 2;
     const s_mass = 100;
     // Create a smooth sphere geometry
@@ -76,7 +94,7 @@ function init_scene(){
     const material = new THREE.MeshStandardMaterial({
         color: 0x0077ff,
         roughness: 0.2,
-        metalness: 0.5
+        metalness: 0.8
     });
 
     const sphere = new THREE.Mesh(geometry, material);
@@ -108,7 +126,7 @@ function init_scene(){
     const volumeMass = 20;
     const sphereGeometry = new THREE.SphereGeometry( 1.5, 40, 25 );
     sphereGeometry.translate( 4, 10, 4 );
-    const volume = new THREE.Mesh( sphereGeometry, new THREE.MeshPhongMaterial( { color: 0x613aa1 } ) );
+    const volume = new THREE.Mesh( sphereGeometry, material);
     volume.castShadow = true;
     volume.receiveShadow = true;
     volume.frustumCulled = false;
@@ -120,7 +138,7 @@ function init_scene(){
     const g_size = 20;
     const ground = new THREE.Mesh(
         new THREE.BoxGeometry(g_size, 1, g_size),
-        new THREE.MeshStandardMaterial({color: 0x404040}));
+        new THREE.MeshStandardMaterial({color: 0x404040,  roughness: 0.1, metalness: 0.8}));
     ground.castShadow = false;
     ground.receiveShadow = true;
     scene.add(ground);
