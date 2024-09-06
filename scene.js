@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { RectAreaLightHelper } from 'https://unpkg.com/three@0.168.0/examples/jsm/helpers/RectAreaLightHelper.js';
+import { RectAreaLightUniformsLib } from 'https://unpkg.com/three@0.168.0/examples/jsm/lights/RectAreaLightUniformsLib.js';
 
 const clock = new THREE.Clock();
 
@@ -9,7 +11,7 @@ let camera, controls, scene, renderer, container;
 
 // Physics stuff
 let collisionConfiguration, dispatcher, broadphase, solver, physicsWorld, tmpTransform, softBodySolver, transformAux1, softBodyHelpers;
-const gravityConstant = - 9.8;
+const gravityConstant = - 100;
 const margin = 0.05;
 let rigidBodies = [];
 const softBodies = [];
@@ -67,8 +69,10 @@ function init_scene(){
     light.shadow.camera.far = 500;
     scene.add(light);
 
+    const s_radius = 2;
+    const s_mass = 100;
     // Create a smooth sphere geometry
-    const geometry = new THREE.SphereGeometry(1.5, 64, 64);
+    const geometry = new THREE.SphereGeometry(s_radius, 64, 64);
     const material = new THREE.MeshStandardMaterial({
         color: 0x0077ff,
         roughness: 0.2,
@@ -76,51 +80,52 @@ function init_scene(){
     });
 
     const sphere = new THREE.Mesh(geometry, material);
-    sphere.position.y = 4;
+    sphere.position.y = 10;
     sphere.castShadow = true;
     sphere.receiveShadow = true;
     scene.add(sphere);
-    let physics_sphere = create_sphere_physics(1.5,sphere.position, 10);
+    let physics_sphere = create_sphere_physics(s_mass,sphere.position, s_radius);
     
-    physics_sphere.body.setRestitution(0.75);
+    physics_sphere.body.setRestitution(0.5);
     physics_sphere.body.setFriction(1);
-    physics_sphere.body.setRollingFriction(5);
+    physics_sphere.body.setRollingFriction(1);
     physicsWorld.addRigidBody(physics_sphere.body);
     rigidBodies.push({mesh: sphere, rigidBody: physics_sphere});
 
-    const sphere2 = new THREE.Mesh(geometry, material);
-    sphere2.position.set( 2, 10, 2 );
-    sphere2.castShadow = true;
-    sphere2.receiveShadow = true;
-    scene.add(sphere2);
-    let physics_sphere2 = create_sphere_physics(1.5,sphere2.position, 10);
+    // const sphere2 = new THREE.Mesh(geometry, material);
+    // sphere2.position.set( 2, 10, 2 );
+    // sphere2.castShadow = true;
+    // sphere2.receiveShadow = true;
+    // scene.add(sphere2);
+    // let physics_sphere2 = create_sphere_physics(1.5,sphere2.position, 10);
     
-    physics_sphere2.body.setRestitution(0.75);
-    physics_sphere2.body.setFriction(1);
-    physics_sphere2.body.setRollingFriction(5);
-    physicsWorld.addRigidBody(physics_sphere2.body);
-    rigidBodies.push({mesh: sphere2, rigidBody: physics_sphere2});
+    // physics_sphere2.body.setRestitution(0.75);
+    // physics_sphere2.body.setFriction(1);
+    // physics_sphere2.body.setRollingFriction(5);
+    // physicsWorld.addRigidBody(physics_sphere2.body);
+    // rigidBodies.push({mesh: sphere2, rigidBody: physics_sphere2});
 
-    const volumeMass = 15;
+    const volumeMass = 20;
     const sphereGeometry = new THREE.SphereGeometry( 1.5, 40, 25 );
-    sphereGeometry.translate( 2, 4, 2 );
+    sphereGeometry.translate( 4, 10, 4 );
     const volume = new THREE.Mesh( sphereGeometry, new THREE.MeshPhongMaterial( { color: 0x613aa1 } ) );
     volume.castShadow = true;
     volume.receiveShadow = true;
     volume.frustumCulled = false;
     scene.add( volume );
-    createSoftVolume( sphereGeometry, volumeMass, volume, 10000 );
-
+    createSoftVolume( sphereGeometry, volumeMass, volume, 1000 );
 
     // Create the floor 
+
+    const g_size = 20;
     const ground = new THREE.Mesh(
-        new THREE.BoxGeometry(20, 1, 20),
+        new THREE.BoxGeometry(g_size, 1, g_size),
         new THREE.MeshStandardMaterial({color: 0x404040}));
     ground.castShadow = false;
     ground.receiveShadow = true;
     scene.add(ground);
 
-    let physics_ground = create_box_physics(0, ground.position, ground.quaternion, new THREE.Vector3(100, 1, 100));
+    let physics_ground = create_box_physics(0, ground.position, ground.quaternion, new THREE.Vector3(g_size, 1, g_size));
     physics_ground.body.setRestitution(0.99);
     physicsWorld.addRigidBody(physics_ground.body);
 
@@ -132,12 +137,11 @@ function init_physics(){
     dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
     broadphase = new Ammo.btDbvtBroadphase();
     solver = new Ammo.btSequentialImpulseConstraintSolver();
-    tmpTransform = new Ammo.btTransform();
+    collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
     physicsWorld = new Ammo.btSoftRigidDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration, softBodySolver );
     physicsWorld.setGravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
-    physicsWorld.getWorldInfo().set_m_gravity( new Ammo.btVector3( 0, gravityConstant, 0 ) );
+    tmpTransform = new Ammo.btTransform();
 
-    transformAux1 = new Ammo.btTransform();
     softBodyHelpers = new Ammo.btSoftBodyHelpers();
 }
 
@@ -276,8 +280,8 @@ function createSoftVolume( bufferGeom, mass, volume, pressure ) {
         true );
 
     const sbConfig = volumeSoftBody.get_m_cfg();
-    sbConfig.set_viterations( 40 );
-    sbConfig.set_piterations( 40 );
+    sbConfig.set_viterations( 60 );
+    sbConfig.set_piterations( 60 );
 
     // // Soft-soft and soft-rigid collisions
     sbConfig.set_collisions( 0x11 );
@@ -285,12 +289,12 @@ function createSoftVolume( bufferGeom, mass, volume, pressure ) {
     // // Friction
     sbConfig.set_kDF( 0.1 );
     // // Damping
-    sbConfig.set_kDP( 0.01 );
+    sbConfig.set_kDP( 0.0001 );
     // // Pressure
     sbConfig.set_kPR( pressure );
     // // Stiffness
-    volumeSoftBody.get_m_materials().at( 0 ).set_m_kLST( 0.9 );
-    volumeSoftBody.get_m_materials().at( 0 ).set_m_kAST( 0.9 );
+    volumeSoftBody.get_m_materials().at( 0 ).set_m_kLST( 0.99 );
+    volumeSoftBody.get_m_materials().at( 0 ).set_m_kAST( 0.99 );
 
     volumeSoftBody.setTotalMass( mass, false );
     Ammo.castObject( volumeSoftBody, Ammo.btCollisionObject ).getCollisionShape().setMargin( margin );
